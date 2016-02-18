@@ -15,12 +15,17 @@
 library w_module.src.lifecycle_module;
 
 import 'dart:async';
+import 'package:app_intelligence/app_intelligence.dart';
+import 'package:uuid/uuid.dart';
 
 /// Intended to be extended by most base module classes in order to provide a
 /// unified lifecycle API.
 abstract class LifecycleModule {
   /// Name of the module for identification within exceptions and while debugging.
-  String name = 'Module';
+    String name = 'Module';
+  Uuid UuidGenerator = new Uuid();
+
+  String uid;
 
   /// List of child components so that lifecycle can iterate over them as needed
   List<LifecycleModule> _childModules = [];
@@ -50,12 +55,36 @@ abstract class LifecycleModule {
 
   // constructor necessary to init load / unload state stream
   LifecycleModule() {
+    uid = UuidGenerator.v1();
+
     _willLoadController = new StreamController<LifecycleModule>.broadcast();
+    this.willLoad.listen((_) {
+      DateTime now = new DateTime.now();
+      new AppIntelligence("test").telemetry.saveTelemetry(uid, uid, name+" : Will load", "w_module", now, now);
+    });
     _didLoadController = new StreamController<LifecycleModule>.broadcast();
+    this.didLoad.listen((_) {
+      DateTime now = new DateTime.now();
+      new AppIntelligence("test").telemetry.saveTelemetry(uid, uid, name+" : Did load", "w_module", now, now);
+    });
     _willUnloadController = new StreamController<LifecycleModule>.broadcast();
+    this.willUnload.listen((_) {
+      DateTime now = new DateTime.now();
+      new AppIntelligence("test").telemetry.saveTelemetry(uid, uid, name+" : Will unload", "w_module", now, now);
+    });
     _didUnloadController = new StreamController<LifecycleModule>.broadcast();
+    this.didUnload.listen((_) {
+      DateTime now = new DateTime.now();
+      new AppIntelligence("test").telemetry.saveTelemetry(uid, uid, name+" : Did unload", "w_module", now, now);
+    });
     _didLoadChildModuleController =
         new StreamController<LifecycleModule>.broadcast();
+    this.didLoadChildModule.listen((_) {
+      DateTime now = new DateTime.now();
+      new AppIntelligence("test").telemetry.saveTelemetry(uid, uid, name+" : Did load child module", "w_module", now, now);
+    });
+    willLoad.listen((event){});
+
   }
 
   //--------------------------------------------------------
@@ -67,9 +96,11 @@ abstract class LifecycleModule {
   /// Calls the onLoad() method, which can be implemented on a Module.
   /// Executes the willLoad and didLoad event streams.
   Future load() async {
+
     _willLoadController.add(this);
     await onLoad();
     _didLoadController.add(this);
+
   }
 
   /// Public method to async load a child module and register it
